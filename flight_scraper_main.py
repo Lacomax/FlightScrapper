@@ -311,14 +311,17 @@ class FlightScraper:
 
                         # Get flights
                         try:
-                            wait_for_elements(driver, self.config["SELECTORS"]["flight_card"], 
+                            wait_for_elements(driver, self.config["SELECTORS"]["flight_card"],
                                             timeout=self.config["TIMEOUTS"]["selenium"])
-                        except: 
-                            logging.info(f"Timeout: {origin} -> {destination} | {dep_date}")
+                        except:
+                            logging.info(f"Timeout esperando vuelos: {origin} → {destination} | {dep_date}")
                             break
 
                         # Process flights
-                        for flight in get_elements_safely(driver, self.config["SELECTORS"]["flight_card"]):
+                        flight_cards = get_elements_safely(driver, self.config["SELECTORS"]["flight_card"])
+                        logging.debug(f"Vuelos encontrados en DOM: {len(flight_cards)}")
+
+                        for flight in flight_cards:
                             try:
                                 details = get_element_safely(flight, self.config["SELECTORS"]["flight_details"])
                                 if not details: continue
@@ -372,20 +375,34 @@ class FlightScraper:
         return results
 
     def process_airport_pair(self, origin, destination):
-        logging.info(f"Procesando: {origin} - {destination}")
-        
+        logging.info(f"Procesando: {origin} → {destination}")
+
         # Calculate date ranges
         from_date = datetime.strptime(self.config["DATES"]["from"], "%d/%m/%Y")
         to_date = datetime.strptime(self.config["DATES"]["to"], "%d/%m/%Y")
         date_range = (to_date - from_date).days - self.config["STAY_DURATION"]["min_days"]
-        
+
         outbound_dates = generate_date_range(self.config["DATES"]["from"], 0, date_range)
         return_dates = generate_date_range(self.config["DATES"]["to"], date_range, 0)
-        
+
+        logging.debug(f"Fechas de IDA: {outbound_dates[:3]}... ({len(outbound_dates)} total)")
+        logging.debug(f"Fechas de VUELTA: {return_dates[:3]}... ({len(return_dates)} total)")
+
         # Get outbound and return flights
         outbound_flights = self.fetch_prices(origin, destination, outbound_dates)
+        logging.info(f"Vuelos de IDA encontrados: {len(outbound_flights)}")
+
         return_flights = self.fetch_prices(destination, origin, return_dates)
-        
+        logging.info(f"Vuelos de VUELTA encontrados: {len(return_flights)}")
+
+        if not outbound_flights or not return_flights:
+            logging.warning(f"No hay suficientes vuelos para combinar: "
+                           f"IDA={len(outbound_flights)}, VUELTA={len(return_flights)}")
+            return {
+                "origin": origin, "destination": destination,
+                "combinations": []
+            }
+
         # Find best combinations
         combinations = find_best_combinations(
             outbound_flights, return_flights,
@@ -394,7 +411,9 @@ class FlightScraper:
             self.config["PASSENGERS"]["adults"],
             int(self.config["PASSENGERS"]["children"].split("[")[0]) if "[" in self.config["PASSENGERS"]["children"] else 0
         )
-        
+
+        logging.info(f"Combinaciones válidas encontradas: {len(combinations)}")
+
         return {
             "origin": origin, "destination": destination,
             "combinations": combinations[:self.config["MAX_RESULTS"]]
@@ -444,9 +463,11 @@ def main():
                 except Exception as e:
                     logging.error(f"Error en {o} - {d}: {e}")
         
-        best_combinations = sorted(all_combinations, key=lambda x: float(x["Precio_Total"]))[:config["MAX_RESULTS"]]
+        best_combinations = sorted(all_combinations, key=lambda x: float(x["Precio_Total"].replace("€", "")))[:config["MAX_RESULTS"]]
         t_total = time.time() - t_start
-        
+
+        print(f"\nTotal de combinaciones encontradas: {len(all_combinations)}")
+
         if best_combinations:
             print(f"\nMejores combinaciones ({t_total:.1f}s):")
             print(format_combination_table(best_combinations))
