@@ -69,14 +69,22 @@ def setup_edge_driver(headless=True, user_agent=None, proxy=None):
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
     opts.add_experimental_option("useAutomationExtension", False)
 
-    # Usar webdriver-manager si es disponible
-    try:
-        from webdriver_manager.microsoft import EdgeChromiumDriverManager
-        service = Service(EdgeChromiumDriverManager().install())
-    except ImportError:
-        # Fallback a ruta local si existe
-        driver_path = os.path.join("webdrivers", "msedgedriver.exe")
-        service = Service(executable_path=driver_path if os.path.exists(driver_path) else None)
+    # Intentar usar webdriver local primero (más rápido y sin dependencia de internet)
+    driver_path = os.path.join("webdrivers", "msedgedriver.exe")
+
+    if os.path.exists(driver_path):
+        # Usar driver local si existe
+        logging.debug(f"Usando Edge driver local: {driver_path}")
+        service = Service(executable_path=driver_path)
+    else:
+        # Fallback a webdriver-manager si no existe local
+        try:
+            from webdriver_manager.microsoft import EdgeChromiumDriverManager
+            logging.debug("Usando webdriver-manager para descargar Edge driver")
+            service = Service(EdgeChromiumDriverManager().install())
+        except Exception as e:
+            logging.warning(f"webdriver-manager falló: {e}. Usando Edge sin path específico")
+            service = Service()
 
     driver = webdriver.Edge(service=service, options=opts)
 

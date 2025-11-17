@@ -18,13 +18,13 @@ except: AMADEUS_AVAILABLE = False
 
 DEFAULT_CONFIG = {
     "AIRPORTS": ["MUC", "FMM", "NUR"], "DESTINATIONS": ["JRO"],
-    "PASSENGERS": {"adults": 2, "children": "2[11;11]", "seniors": 0, "infantinlap": "Y"},
+    "PASSENGERS": {"adults": 2, "children": "2[12;12]", "seniors": 0, "infantinlap": "Y"},
     "DATES": {"from": "6/6/2025", "to": "22/6/2025"},
     "TIMEOUTS": {"selenium": 60, "retry": 3}, "REQUEST_DELAY": (1, 3),
     "STAY_DURATION": {"min_days": 8, "max_days": 14},
     "DIRECT_FLIGHTS_ONLY": False, "MAX_STOPS": 1, "CABIN_CLASS": "economy",
     "MAX_WORKERS": min(multiprocessing.cpu_count() - 1, 8), "MAX_RETRIES": 3,
-    "API_SOURCES": ["expedia", "kiwi", "skyscanner", "amadeus"],
+    "API_SOURCES": ["expedia"],
     "USER_AGENTS": [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15",
