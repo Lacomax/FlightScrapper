@@ -194,6 +194,9 @@ def get_random_proxy():
     """
     Obtiene un proxy aleatorio de la lista disponible.
 
+    Solo carga la lista de proxies cuando se llama, no al importar.
+    Esto evita intentos de conexión innecesarios cuando proxies no se usan.
+
     Returns:
         str or None: URL del proxy en formato http://host:port, o None si no hay proxies
 
@@ -203,6 +206,11 @@ def get_random_proxy():
     if not PROXIES_AVAILABLE:
         logging.debug("Módulo de proxies no disponible")
         return None
+
+    # Cargar proxies lazily solo si se necesitan
+    if not hasattr(proxies, 'PROXY_LIST') or not proxies.PROXY_LIST:
+        logging.info("Obteniendo lista de proxies (solo la primera vez)...")
+        proxies.fetch_free_proxies()
 
     if hasattr(proxies, 'PROXY_LIST') and proxies.PROXY_LIST:
         selected_proxy = random.choice(proxies.PROXY_LIST)

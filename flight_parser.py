@@ -362,7 +362,10 @@ def build_expedia_url(
     config: Dict
 ) -> str:
     """
-    Construye URL de búsqueda para Expedia.
+    Construye URL de búsqueda ONE-WAY para Expedia.
+
+    Construye URLs simples de ida con parámetros básicos.
+    Nota: Expedia tiene cambios frecuentes en su interfaz.
 
     Args:
         origin (str): Código IATA del aeropuerto de origen
@@ -376,30 +379,29 @@ def build_expedia_url(
     Example:
         >>> url = build_expedia_url("MUC", "JRO", "01/06/2025", config)
         >>> print(url)
-        https://www.expedia.com/Flights-Search?...
+        https://www.expedia.de/Flights-Search?...
     """
     try:
-        # Convertir fecha a formato MM/DD/YYYY para Expedia
+        # Convertir fecha a formato DD.MM.YYYY para Expedia.de (que es más estable)
         date_obj = datetime.strptime(departure_date, "%d/%m/%Y")
-        expedia_date = date_obj.strftime("%-m/%-d/%Y") if os.name != 'nt' else date_obj.strftime("%m/%d/%Y").lstrip('0').replace('/0', '/')
+        expedia_date = date_obj.strftime("%d.%m.%Y")
 
         # Extraer información de pasajeros
         adults = config.get("PASSENGERS", {}).get("adults", 1)
         children_str = config.get("PASSENGERS", {}).get("children", "0")
         children_count = int(children_str.split("[")[0]) if "[" in children_str else 0
 
-        # Construir parámetros
+        # Usar Expedia.de (Deutsche) en lugar de .com para mejor compatibilidad
+        # Parámetros básicos que funcionan con el scraper de Selenium
         params = {
-            "trip": "roundtrip",
+            "trip": "oneway",
             "leg1": f"{origin},{expedia_date}",
-            "leg2": f"{destination},{expedia_date}",
-            "passengers": f"adults,{adults}|children,{children_count}",
-            "mode": "search",
-            "options": "cabinclass:economy"
+            "passengers": f"adults:{adults},children:{children_count}",
+            "mode": "search"
         }
 
-        # Base URL de Expedia
-        base_url = "https://www.expedia.com/Flights-Search"
+        # Base URL de Expedia.de (más estable que .com)
+        base_url = "https://www.expedia.de/Flights-Search"
 
         # Construir query string
         query_parts = []
@@ -408,12 +410,13 @@ def build_expedia_url(
 
         url = f"{base_url}?{'&'.join(query_parts)}"
 
+        logging.debug(f"URL construida: {url}")
         return url
 
     except Exception as e:
         logging.error(f"Error construyendo URL de Expedia: {e}")
         # Retornar URL de búsqueda genérica como fallback
-        return f"https://www.expedia.com/Flights-Search?leg1={origin}&leg2={destination}"
+        return f"https://www.expedia.de/Flights-Search?trip=oneway&leg1={origin},{departure_date}"
 
 
 def save_results_json(results: List[Dict], filename: str) -> bool:

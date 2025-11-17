@@ -177,9 +177,4 @@ def filter_working_proxies(proxies: List[str], max_workers: int = 10) -> List[st
     return working_proxies
 
 
-# Auto-inicializar proxies al importar
-try:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-    fetch_free_proxies()
-except Exception as e:
-    logging.warning(f"Error inicializando proxies automáticamente: {e}")
+# NO auto-inicializar al importar. Solo se carga cuando el usuario lo pide explícitamente.
