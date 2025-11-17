@@ -54,13 +54,13 @@ def search_google_flights(
         logging.debug(f"Google Flights URL: {url}")
         driver.get(url)
 
-        # Esperar a que cargue (Google Flights es lento)
+        # Esperar a que cargue (Google Flights es lento - aumentado a 60s para conexiones lentas)
         try:
-            WebDriverWait(driver, 30).until(
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-test-id='flight-card']"))
             )
         except:
-            logging.warning("Timeout esperando resultados de Google Flights")
+            logging.warning("Timeout esperando resultados de Google Flights (>60s)")
             return []
 
         flights = _parse_google_flights_page(driver, origin, destination, departure_date, return_date)

@@ -7,6 +7,7 @@ Sin necesidad de Selenium, solo requests.
 
 import requests
 import logging
+import certifi
 from datetime import datetime
 from typing import List, Dict, Optional
 
@@ -64,7 +65,13 @@ def search_ryanair_roundtrip(
         }
 
         logging.debug(f"RyanAir API call: {origin} → {destination} | {departure_date}")
-        response = requests.post(RYANAIR_API, json=payload, headers=HEADERS, timeout=15)
+        response = requests.post(
+            RYANAIR_API,
+            json=payload,
+            headers=HEADERS,
+            timeout=15,
+            verify=certifi.where()  # Usar certificados SSL actualizados
+        )
         response.raise_for_status()
 
         return response.json()
