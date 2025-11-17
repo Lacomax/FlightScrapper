@@ -1,0 +1,46 @@
+{
+    "AIRPORTS": [
+        "MUC",
+        "FMM",
+        "NUR"
+    ],
+    "DESTINATIONS": [
+        "JRO"
+    ],
+    "PASSENGERS": {
+        "adults": 2,
+        "children": "2[11;11]",
+        "seniors": 0,
+        "infantinlap": "Y"
+    },
+    "DATES": {
+        "from": "6/6/2025",
+        "to": "22/6/2025"
+    },
+    "TIMEOUTS": {
+        "selenium": 60,
+        "retry": 3
+    },
+    "REQUEST_DELAY": [
+        1,
+        3
+    ],
+    "STAY_DURATION": {
+        "min_days": 8,
+        "max_days": 14
+    },
+    "DIRECT_FLIGHTS_ONLY": false,
+    "MAX_STOPS": 1,
+    "CABIN_CLASS": "economy",
+    "MAX_WORKERS": 3,
+    "MAX_RETRIES": 3,
+    "API_SOURCES": [
+        "expedia",
+        "kiwi",
+        "skyscanner",
+        "amadeus"
+    ],
+    "OUTPUT_FILE": "resultados_vuelos.json",
+    "MAX_RESULTS": 20,
+    "USE_PROXIES": false
+}
