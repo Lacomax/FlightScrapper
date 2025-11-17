@@ -1,9 +1,11 @@
 """
-Buscador de Vuelos - RyanAir + Google Flights
+Buscador de Vuelos - Google Flights
 
-Script limpio para buscar vuelos de forma privada combinando:
-- RyanAir API (rápido, solo vuelos RyanAir)
-- Google Flights (comparativa, más fuentes)
+Script limpio para buscar vuelos de forma privada usando:
+- Google Flights: Web scraping con Selenium (múltiples fuentes)
+
+Nota: RyanAir API cambió y no es accesible. Google Flights incluye
+resultados de RyanAir de todas formas.
 
 Uso: python flight_scraper_main.py [opciones]
 """
@@ -19,7 +21,6 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 # Importar scrapers
-from ryanair_scraper import search_ryanair_roundtrip, extract_ryanair_flights
 from google_flights_scraper import search_google_flights
 from webdriver_utils import setup_edge_driver, random_delay
 
@@ -32,7 +33,6 @@ DEFAULT_CONFIG = {
     "PASSENGERS": {"adults": 2, "children": "2[12;12]"},
     "DATES": {"from": "6/6/2025", "to": "22/6/2025"},
     "STAY_DURATION": {"min_days": 8, "max_days": 14},
-    "SOURCES": ["ryanair", "google"],
     "OUTPUT_FILE": "resultados_vuelos.json",
     "MAX_RESULTS": 20,
 }
@@ -80,12 +80,12 @@ def get_user_input() -> Dict:
 
     if last_cfg:
         cfg = last_cfg
-        print("\n===== Buscador de Vuelos (RyanAir + Google) =====")
+        print("\n===== Buscador de Vuelos (Google Flights) =====")
         print(f"Última búsqueda: {last_cfg['AIRPORTS'][0]} → {last_cfg['DESTINATIONS'][0]}")
         print("Presiona Enter para valores de la última búsqueda.\n")
     else:
         cfg = DEFAULT_CONFIG.copy()
-        print("\n===== Buscador de Vuelos (RyanAir + Google) =====")
+        print("\n===== Buscador de Vuelos (Google Flights) =====")
         print("Presiona Enter para valores predeterminados.\n")
 
     # Campos básicos
@@ -142,21 +142,7 @@ def get_user_input() -> Dict:
     elif children and children.isdigit():
         cfg["PASSENGERS"]["children"] = "0"
 
-    # Fuentes
-    print(f"\nFuentes disponibles:")
-    print("1. RyanAir (rápido, vuelos reales)")
-    print("2. Google Flights (lento, comparativa)")
-    print(f"3. Ambas [default]")
-    sources_input = input("Selecciona (1/2/3): ").strip().lower()
-
-    source_map = {
-        "1": ["ryanair"],
-        "2": ["google"],
-        "3": ["ryanair", "google"],
-        "": ["ryanair", "google"],
-    }
-
-    cfg["SOURCES"] = source_map.get(sources_input, ["ryanair", "google"])
+    # Nota: Solo Google Flights (RyanAir API ya no está disponible)
 
     # Guardar configuración
     with open("last_config.json", "w") as f:
@@ -167,47 +153,30 @@ def get_user_input() -> Dict:
 
 # ==================== BÚSQUEDA DE VUELOS ====================
 
-def search_all_sources(
+def search_google_flights_wrapper(
     origin: str,
     destination: str,
     departure_date: str,
     return_date: str,
-    config: Dict,
     driver = None
 ) -> List[Dict]:
     """
-    Busca vuelos en todas las fuentes configuradas.
+    Busca vuelos en Google Flights.
     """
-    all_flights = []
+    if not driver:
+        logging.error("Google Flights requiere WebDriver")
+        return []
 
-    # RyanAir
-    if "ryanair" in config.get("SOURCES", []):
-        try:
-            logging.info(f"RyanAir: {origin} → {destination}")
-            data = search_ryanair_roundtrip(
-                origin, destination, departure_date, return_date,
-                adults=config["PASSENGERS"]["adults"],
-                children=int(config["PASSENGERS"]["children"].split("[")[0]) if "[" in config["PASSENGERS"]["children"] else 0
-            )
-            if data:
-                flights = extract_ryanair_flights(data)
-                all_flights.extend(flights)
-                logging.info(f"  → {len(flights)} vuelos encontrados")
-        except Exception as e:
-            logging.warning(f"Error RyanAir: {e}")
+    try:
+        logging.info(f"Google Flights: {origin} → {destination}")
+        flights = search_google_flights(origin, destination, departure_date, return_date, driver)
+        if flights:
+            logging.info(f"  → {len(flights)} vuelos encontrados")
+            return flights
+    except Exception as e:
+        logging.error(f"Error Google Flights: {e}")
 
-    # Google Flights
-    if "google" in config.get("SOURCES", []) and driver:
-        try:
-            logging.info(f"Google Flights: {origin} → {destination}")
-            flights = search_google_flights(origin, destination, departure_date, return_date, driver)
-            if flights:
-                all_flights.extend(flights)
-                logging.info(f"  → {len(flights)} vuelos encontrados")
-        except Exception as e:
-            logging.warning(f"Error Google Flights: {e}")
-
-    return all_flights
+    return []
 
 
 def find_best_combinations(
@@ -322,18 +291,19 @@ def main():
     else:
         cfg = get_user_input()
 
-    print(f"\nBuscando vuelos usando: {', '.join(cfg['SOURCES'])}")
+    print(f"\nBuscando vuelos usando: Google Flights")
 
-    # Inicializar WebDriver si necesita Google Flights
+    # Inicializar WebDriver para Google Flights
     driver = None
-    if "google" in cfg["SOURCES"]:
-        try:
-            logging.info("Inicializando navegador para Google Flights...")
-            driver = setup_edge_driver(headless=not args.gui, user_agent=random.choice(USER_AGENTS))
-        except Exception as e:
-            logging.warning(f"No se pudo inicializar navegador: {e}")
-            logging.warning("Continuando solo con RyanAir...")
-            cfg["SOURCES"] = [s for s in cfg["SOURCES"] if s != "google"]
+    try:
+        logging.info("Inicializando navegador para Google Flights...")
+        driver = setup_edge_driver(headless=not args.gui, user_agent=random.choice(USER_AGENTS))
+    except Exception as e:
+        logging.error(f"ERROR: No se pudo inicializar navegador: {e}")
+        print("\n❌ No se pudo inicializar el navegador. Necesitas:")
+        print("   1. Descargar msedgedriver.exe compatible con tu versión de Edge")
+        print("   2. Ver WEBDRIVER_SETUP.md para instrucciones")
+        sys.exit(1)
 
     try:
         t_start = time.time()
@@ -357,8 +327,8 @@ def main():
                     dep_str = dep_date.strftime("%d/%m/%Y")
 
                     # Buscar vuelos de ida y vuelta
-                    outbound = search_all_sources(origin, destination, dep_str, to_date.strftime("%d/%m/%Y"), cfg, driver)
-                    return_flights = search_all_sources(destination, origin, to_date.strftime("%d/%m/%Y"), dep_str, cfg, driver)
+                    outbound = search_google_flights_wrapper(origin, destination, dep_str, to_date.strftime("%d/%m/%Y"), driver)
+                    return_flights = search_google_flights_wrapper(destination, origin, to_date.strftime("%d/%m/%Y"), dep_str, driver)
 
                     # Combinar
                     combos = find_best_combinations(

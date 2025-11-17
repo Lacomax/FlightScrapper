@@ -1,15 +1,17 @@
 # FlightScrapper - Buscador Privado de Vuelos
 
-Herramienta simple y privada para buscar vuelos combinando dos fuentes:
-- **RyanAir**: API oficial (rápido, solo vuelos RyanAir)
-- **Google Flights**: Web scraping con Selenium (lento, comparativa)
+Herramienta simple y privada para buscar vuelos usando:
+- **Google Flights**: Web scraping con Selenium (múltiples fuentes de vuelos)
+
+**Nota**: RyanAir cambió su API y ya no es accesible. Google Flights incluye
+resultados de RyanAir de todas formas.
 
 **Uso privado SOLO** - No comercial, no distribuido.
 
 ## 🚀 Características
 
-- ✅ Búsqueda rápida en RyanAir via API oficial
-- ✅ Búsqueda en Google Flights (renderizado JavaScript)
+- ✅ Búsqueda en Google Flights (múltiples aerolíneas)
+- ✅ Renderizado completo de JavaScript con Selenium
 - ✅ Combinación inteligente de vuelos ida + vuelta
 - ✅ Filtrado por duración de estancia
 - ✅ Persistencia de configuración (recuerda última búsqueda)
@@ -65,7 +67,7 @@ python flight_scraper_main.py --gui
 ### Ejemplo Interactivo
 
 ```
-===== Buscador de Vuelos (RyanAir + Google) =====
+===== Buscador de Vuelos (Google Flights) =====
 Última búsqueda: MUC → JRO
 Presiona Enter para valores de la última búsqueda.
 
@@ -83,11 +85,7 @@ Niños [2]: 2
 Edad niño 1 [12]: 12
 Edad niño 2 [12]: 12
 
-Fuentes disponibles:
-1. RyanAir (rápido, vuelos reales)
-2. Google Flights (lento, comparativa)
-3. Ambas [default]
-Selecciona (1/2/3): 1
+Buscando vuelos usando: Google Flights
 ```
 
 ## 📁 Estructura
@@ -95,7 +93,6 @@ Selecciona (1/2/3): 1
 ```
 FlightScrapper/
 ├── flight_scraper_main.py      # Script principal
-├── ryanair_scraper.py          # Scraper RyanAir (API)
 ├── google_flights_scraper.py   # Scraper Google Flights (Selenium)
 ├── webdriver_utils.py          # Utilidades Selenium
 ├── webdrivers/                 # Carpeta para msedgedriver.exe
@@ -124,7 +121,6 @@ Interactivamente se pregunta por:
 | Adultos | 2 | Número entero |
 | Niños | 2 | Número entero |
 | Edades | 12;12 | Separadas por punto y coma |
-| Fuentes | 1/2/3 | 1=RyanAir, 2=Google, 3=Ambas |
 
 ### last_config.json
 
@@ -145,8 +141,7 @@ Se guarda automáticamente tu última búsqueda:
   "STAY_DURATION": {
     "min_days": 8,
     "max_days": 14
-  },
-  "SOURCES": ["ryanair", "google"]
+  }
 }
 ```
 
@@ -187,22 +182,20 @@ FAMILIA:  €1599.92
 
 ## 🔍 Troubleshooting
 
-### Error: "Could not reach host"
+### Error: "Could not reach host" o versión mismatch
 Ver `WEBDRIVER_SETUP.md` - Es un problema de versión de Edge WebDriver.
+La versión del driver DEBE coincidir exactamente con tu Edge.
 
-### RyanAir: "0 vuelos encontrados"
-- Comprobación: Los códigos IATA son correctos (3 letras)
-- RyanAir puede no tener vuelos en esa ruta
-- Intentar con dates diferentes
-
-### Google Flights: Muy lento
-- Google Flights requiere esperar a JavaScript (normal)
+### Google Flights: "Timeout esperando resultados"
+- Google Flights requiere esperar a JavaScript (normal, 30-60 segundos)
 - Usa `--gui` para ver qué está haciendo
-- Si falla, solo usa RyanAir (opción 1)
+- Si la conexión es lenta, aumenta timeout en `google_flights_scraper.py`
+- Timeout está configurado a 60 segundos (aumentar si es necesario)
 
-### "Script timeout"
-- Aumenta timeout en el código: `timeout=60` → `timeout=120`
-- Google Flights es lento en conexiones lentas
+### "0 vuelos encontrados"
+- Comprobación: Los códigos IATA son correctos (3 letras)
+- Puede no haber vuelos disponibles en esas fechas
+- Intentar con diferentes fechas o rutas
 
 ## 📋 Requisitos
 
@@ -231,16 +224,17 @@ Archivo `flight_scraper.log` contiene:
 
 ## 🎓 Notas Técnicas
 
-### RyanAir
-- Usa API pública oficial: `https://www.ryanair.com/api/farfnd/v4/roundTrip`
-- Requests HTTP simples, muy rápido
-- Solo vuelos RyanAir (no terceros)
-
 ### Google Flights
 - Carga con Selenium (JavaScript renderizado)
 - Parsing de DOM con regex (frágil a cambios)
-- Más fuentes incluidas
-- Mucho más lento (30+ segundos)
+- Múltiples aerolíneas incluidas (RyanAir, Vueling, etc.)
+- Timeout: 60 segundos (puedes aumentar en `google_flights_scraper.py`)
+- Tiempo típico: 30-60 segundos por búsqueda
+
+### Limitaciones Conocidas
+- Google Flights actualiza su estructura HTML frecuentemente
+- Si el parsing falla, el CSS selector puede necesitar actualización
+- No es posible paralelizar múltiples búsquedas de forma segura con Selenium
 
 ## 🚀 Mejoras Futuras
 
@@ -259,4 +253,4 @@ Para problemas:
 
 ---
 
-**FlightScrapper v2.0** - Limpio, privado, sin APIs complicadas.
+**FlightScrapper v2.1** - Solo Google Flights (RyanAir API ya no disponible).
