@@ -1,27 +1,12 @@
-# FlightScrapper Requirements
-# Instala todas las dependencias necesarias con:
+# FlightScrapper v2.0 - Requisitos mínimos
 # pip install -r requirements.txt
 
-# Web Scraping
+# Web Scraping y WebDriver
 selenium>=4.15.0
 webdriver-manager>=4.0.0
 
 # HTTP Requests
 requests>=2.31.0
-urllib3>=2.1.0
 
-# APIs y Integraciones
-amadeus>=2.1.0
-
-# Caching
-cachetools>=5.3.0
-
-# Configuration Management
+# Opcional pero recomendado
 python-dotenv>=1.0.0
-
-# Data Processing (Opcional)
-pandas>=2.0.0
-
-# Testing (Opcional)
-pytest>=7.4.0
-pytest-cov>=4.1.0

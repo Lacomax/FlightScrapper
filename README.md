@@ -1,53 +1,40 @@
-# FlightScrapper - Buscador Multi-API de Vuelos
+# FlightScrapper - Buscador Privado de Vuelos
 
-Sistema avanzado y modular para búsqueda comparativa de vuelos entre múltiples proveedores en tiempo real, optimizado para encontrar las mejores combinaciones de vuelos ida y vuelta.
+Herramienta simple y privada para buscar vuelos combinando dos fuentes:
+- **RyanAir**: API oficial (rápido, solo vuelos RyanAir)
+- **Google Flights**: Web scraping con Selenium (lento, comparativa)
 
-## 📋 Descripción
+**Uso privado SOLO** - No comercial, no distribuido.
 
-**FlightScrapper** es un proyecto Python que integra múltiples fuentes de datos de vuelos para proporcionar búsquedas rápidas, precisas y baratas. Combina web scraping con acceso a APIs oficiales para ofrecer la máxima cobertura.
+## 🚀 Características
 
-### Fuentes de Datos Soportadas
-
-| Fuente | Método | Cobertura | Velocidad | Limitaciones |
-|--------|--------|-----------|-----------|--------------|
-| **Expedia** | Web Scraping | Global | Media | Requiere Selenium |
-| **Kiwi.com** | API (Tequila) | Excelente | Rápida | Rate limit: 180/min |
-| **Skyscanner** | API (RapidAPI) | Excelente | Rápida | Limitado por plan |
-| **Amadeus** | API Oficial | Excelente | Rápida | Requiere credenciales |
-
-## 🚀 Características Principales
-
-- ✅ **Búsqueda Multi-Origen**: Busca desde múltiples aeropuertos simultáneamente
-- ✅ **Comparación Automática**: Combina resultados de múltiples fuentes
-- ✅ **Matching Inteligente**: Encuentra mejores combinaciones ida/vuelta
-- ✅ **Filtrado Avanzado**: Directos, máximo de escalas, clase de cabina
-- ✅ **Caché Automático**: Evita búsquedas redundantes (hasta 1 hora)
-- ✅ **Reintentos Inteligentes**: Recuperación automática ante errores
-- ✅ **Proxies Rotativos**: Obtención y validación automática de proxies
-- ✅ **Paralelización**: ThreadPoolExecutor para máxima eficiencia
-- ✅ **Configuración Persistente**: Guarda tu último búsqueda
-- ✅ **Exportación Flexible**: JSON y texto formateado
-- ✅ **Logging Detallado**: Rastreo completo de operaciones
+- ✅ Búsqueda rápida en RyanAir via API oficial
+- ✅ Búsqueda en Google Flights (renderizado JavaScript)
+- ✅ Combinación inteligente de vuelos ida + vuelta
+- ✅ Filtrado por duración de estancia
+- ✅ Persistencia de configuración (recuerda última búsqueda)
+- ✅ Soporte para múltiples pasajeros (adultos + niños)
+- ✅ Exportación a JSON
+- ✅ Logging detallado
 
 ## 📦 Instalación
 
-### Prerrequisitos
+### Requisitos
 
-- Python 3.8 o superior
-- pip (gestor de paquetes de Python)
+- Python 3.8+
+- Windows/Mac/Linux
 
-### Pasos de Instalación
+### Pasos
 
-1. **Clonar el repositorio**
+1. **Clonar y entrar al directorio**
 ```bash
-git clone <repository-url>
 cd FlightScrapper
 ```
 
-2. **Crear entorno virtual (recomendado)**
+2. **Crear entorno virtual (opcional pero recomendado)**
 ```bash
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
 3. **Instalar dependencias**
@@ -55,344 +42,221 @@ source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Configurar variables de entorno**
+4. **Descargar WebDriver de Edge** (requerido para Google Flights)
+
+Ver `WEBDRIVER_SETUP.md` para instrucciones detalladas.
+
+## 🎯 Uso Rápido
+
 ```bash
-cp .env.example .env
-# Editar .env y agregar tus credenciales de API
+# Búsqueda interactiva
+python flight_scraper_main.py
+
+# Cargar última búsqueda
+python flight_scraper_main.py --load
+
+# Con logs detallados
+python flight_scraper_main.py --verbose
+
+# Mostrar navegador (no headless)
+python flight_scraper_main.py --gui
 ```
 
-## ⚙️ Configuración
+### Ejemplo Interactivo
 
-### Variables de Entorno (.env)
+```
+===== Buscador de Vuelos (RyanAir + Google) =====
+Última búsqueda: MUC → JRO
+Presiona Enter para valores de la última búsqueda.
 
-```ini
-# Kiwi.com API
-KIWI_API_KEY=tu_api_key_aqui
+Aeropuertos origen [MUC, FMM, NUR]: MUC
+Destinos [JRO]: BCN
 
-# Skyscanner via RapidAPI
-RAPID_API_KEY=tu_rapid_api_key_aqui
+Fecha mín salida DD/MM/YYYY [6/6/2025]: 20/12/2025
+Fecha máx regreso [22/6/2025]: 3/1/2026
 
-# Amadeus API
-AMADEUS_CLIENT_ID=tu_client_id_aqui
-AMADEUS_CLIENT_SECRET=tu_client_secret_aqui
+Estancia mínima (o MAX) [8]: MAX
+Estancia máxima [14]: 14
 
-# Opciones
-USE_PROXIES=false
-HEADLESS_MODE=true
-SELENIUM_TIMEOUT=60
+Adultos [2]: 2
+Niños [2]: 2
+Edad niño 1 [12]: 12
+Edad niño 2 [12]: 12
+
+Fuentes disponibles:
+1. RyanAir (rápido, vuelos reales)
+2. Google Flights (lento, comparativa)
+3. Ambas [default]
+Selecciona (1/2/3): 1
 ```
 
-### Obtener Credenciales de APIs
-
-#### 1. Kiwi.com (Tequila API)
-- Ir a https://tequila.kiwi.com/portal/login
-- Crear cuenta de desarrollador
-- Copiar API Key a `.env`
-
-#### 2. Skyscanner (via RapidAPI)
-- Ir a https://rapidapi.com/skyscanner/api/skyscanner-flight-search
-- Suscribirse al plan gratuito o de pago
-- Copiar API Key a `.env`
-
-#### 3. Amadeus
-- Ir a https://developers.amadeus.com
-- Crear aplicación
-- Copiar Client ID y Secret a `.env`
-
-## 📚 Estructura del Proyecto
+## 📁 Estructura
 
 ```
 FlightScrapper/
-├── flight_scraper_main.py      # Script principal de orquestación
-├── flight_parser.py             # Procesamiento y parseo de datos
-├── webdriver_utils.py           # Utilidades de Selenium
-├── amadeus_api.py               # Integración Amadeus
-├── kiwi_api.py                  # Integración Kiwi.com
-├── skyscanner_api.py            # Integración Skyscanner
-├── proxies.py                   # Gestión de proxies
-├── requirements.txt             # Dependencias Python
-├── .env.example                 # Plantilla de variables de entorno
-├── last_config.json             # Configuración guardada
-└── README.md                    # Este archivo
+├── flight_scraper_main.py      # Script principal
+├── ryanair_scraper.py          # Scraper RyanAir (API)
+├── google_flights_scraper.py   # Scraper Google Flights (Selenium)
+├── webdriver_utils.py          # Utilidades Selenium
+├── webdrivers/                 # Carpeta para msedgedriver.exe
+├── last_config.json            # Última configuración (auto-generado)
+├── resultados_vuelos.json      # Resultados (auto-generado)
+├── flight_scraper.log          # Logs (auto-generado)
+├── requirements.txt            # Dependencias
+├── WEBDRIVER_SETUP.md          # Guía configuración WebDriver
+└── README.md                   # Este archivo
 ```
 
-### Descripción de Módulos
+## 🔧 Configuración
 
-| Módulo | Responsabilidad |
-|--------|-----------------|
-| **flight_scraper_main.py** | Orquestación, UI interactiva, control de flujo |
-| **flight_parser.py** | Parseo de datos, combinación de vuelos, exportación |
-| **webdriver_utils.py** | Inicialización de Selenium, manejo de navegador |
-| **amadeus_api.py** | Búsqueda y extracción desde API Amadeus |
-| **kiwi_api.py** | Búsqueda y extracción desde API Kiwi.com |
-| **skyscanner_api.py** | Búsqueda y extracción desde API Skyscanner |
-| **proxies.py** | Obtención, validación y gestión de proxies |
+### Parámetros de Búsqueda
 
-## 🎯 Uso
+Interactivamente se pregunta por:
 
-### Ejecución Básica
+| Parámetro | Ejemplo | Notas |
+|-----------|---------|-------|
+| Origen | MUC | Códigos IATA, separar con comas |
+| Destino | BCN | Código IATA |
+| Salida | 20/12/2025 | Formato DD/MM/YYYY |
+| Regreso | 3/1/2026 | Formato DD/MM/YYYY |
+| Est. mínima | 8 o MAX | MAX = auto-calcula máximo posible |
+| Est. máxima | 14 | Días máximo permitido |
+| Adultos | 2 | Número entero |
+| Niños | 2 | Número entero |
+| Edades | 12;12 | Separadas por punto y coma |
+| Fuentes | 1/2/3 | 1=RyanAir, 2=Google, 3=Ambas |
 
-```bash
-python flight_scraper_main.py
+### last_config.json
+
+Se guarda automáticamente tu última búsqueda:
+
+```json
+{
+  "AIRPORTS": ["MUC"],
+  "DESTINATIONS": ["BCN"],
+  "PASSENGERS": {
+    "adults": 2,
+    "children": "2[12;12]"
+  },
+  "DATES": {
+    "from": "20/12/2025",
+    "to": "03/01/2026"
+  },
+  "STAY_DURATION": {
+    "min_days": 8,
+    "max_days": 14
+  },
+  "SOURCES": ["ryanair", "google"]
+}
 ```
 
-Se te pedirá que ingreses:
-- Aeropuertos de origen (códigos IATA, ej: MUC, VIE)
-- Destino (código IATA, ej: JRO)
-- Fecha mínima de salida (DD/MM/YYYY)
-- Fecha máxima de retorno (DD/MM/YYYY)
-- Duración mínima/máxima de estancia
-- Número de adultos y niños
-- Preferencias de vuelo (directos, escalas)
+## 📊 Resultados
 
-### Opciones de Línea de Comandos
+### Formato Console
 
-```bash
-# Usar configuración guardada
-python flight_scraper_main.py --load
-
-# Modo verbose (debug)
-python flight_scraper_main.py --verbose
-
-# Especificar fuentes
-python flight_scraper_main.py --apis expedia,kiwi,skyscanner
-
-# Usar proxies
-python flight_scraper_main.py --proxies
-
-# Modo GUI (sin interfaz visual)
-python flight_scraper_main.py --headless
-
-# Máximo de búsquedas paralelas
-python flight_scraper_main.py --max-workers 5
-
-# Combinación
-python flight_scraper_main.py --load --verbose --apis kiwi,amadeus
+```
+────────────────────────────────────────────────────────
+OPCIÓN 1
+────────────────────────────────────────────────────────
+IDA:      2025-12-20 | 14:00 → 18:30 | RyanAir | €199.99
+VUELTA:   2026-01-03 | 09:15 → 15:45 | RyanAir | €199.99
+ESTANCIA: 14 días
+TOTAL:    €399.98 por persona
+FAMILIA:  €1599.92
 ```
 
-## 📊 Ejemplos de Uso
+### Archivo resultados_vuelos.json
 
-### Ejemplo 1: Búsqueda Simple
-
-```bash
-$ python flight_scraper_main.py
-
-===== Buscador de Vuelos Mejorado =====
-Presiona Enter para valores predeterminados.
-
-Aeropuertos origen [MUC, FMM, NUR]: MUC, VIE
-Destinos [JRO]: JRO
-Fecha mín salida (DD/MM/YYYY) [6/6/2025]: 10/06/2025
-Fecha máx regreso [22/6/2025]: 20/06/2025
-Estancia mínima [8]: 7
-Estancia máxima [14]: 10
-Adultos [2]: 2
-Niños [0]: 2
-¿Solo directos? (s/n) [n]: n
-Escalas máx [1]: 2
-Clase [economy]: economy
-```
-
-### Ejemplo 2: Búsqueda Rápida con Config Guardada
-
-```bash
-python flight_scraper_main.py --load --verbose
-```
-
-### Ejemplo 3: Búsqueda con APIs Específicas
-
-```bash
-python flight_scraper_main.py --apis kiwi,amadeus --max-workers 8
-```
-
-## 📁 Archivos de Salida
-
-Después de una búsqueda exitosa, se generan:
-
-### 1. **resultados_vuelos.json**
-Contiene todos los vuelos encontrados en formato JSON:
 ```json
 [
   {
-    "origin": "MUC",
-    "destination": "JRO",
-    "combinations": [
-      {
-        "Ida_Fecha": "10/06/2025",
-        "Ida_Precio": "€350.00",
-        "Vuelta_Fecha": "20/06/2025",
-        "Vuelta_Precio": "€380.00",
-        "Precio_Total": "€730.00",
-        "Precio_Total_Familia": "€2920.00"
-      }
-    ]
+    "Ida_Fecha": "2025-12-20",
+    "Ida_Hora": "14:00 → 18:30",
+    "Ida_Aerolínea": "RyanAir",
+    "Ida_Precio": 199.99,
+    "Vuelta_Fecha": "2026-01-03",
+    "Vuelta_Hora": "09:15 → 15:45",
+    "Vuelta_Aerolínea": "RyanAir",
+    "Vuelta_Precio": 199.99,
+    "Días": 14,
+    "Precio_Total": "€399.98",
+    "Precio_Familia": "€1599.92"
   }
 ]
 ```
 
-### 2. **resultados_vuelos.txt**
-Tabla formateada legible:
+## 🔍 Troubleshooting
+
+### Error: "Could not reach host"
+Ver `WEBDRIVER_SETUP.md` - Es un problema de versión de Edge WebDriver.
+
+### RyanAir: "0 vuelos encontrados"
+- Comprobación: Los códigos IATA son correctos (3 letras)
+- RyanAir puede no tener vuelos en esa ruta
+- Intentar con dates diferentes
+
+### Google Flights: Muy lento
+- Google Flights requiere esperar a JavaScript (normal)
+- Usa `--gui` para ver qué está haciendo
+- Si falla, solo usa RyanAir (opción 1)
+
+### "Script timeout"
+- Aumenta timeout en el código: `timeout=60` → `timeout=120`
+- Google Flights es lento en conexiones lentas
+
+## 📋 Requisitos
+
 ```
-════════════════════════════════════════════════════════════════════════════════════════════════════════
-
-                    MEJORES COMBINACIONES DE VUELOS
-
-════════════════════════════════════════════════════════════════════════════════════════════════════════
-
-OPCIÓN #1
-────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-VUELO DE IDA:
-  Fecha:       10/06/2025
-  Ruta:        MUC → JRO
-  Hora:        09:15 → 20:45
-  Compañía:    Lufthansa
-  Duración:    12h 30m
-  Escalas:     1
-  Precio:      €350.00
-
-VUELO DE VUELTA:
-  ...
-```
-
-## 🔧 Configuración Avanzada
-
-### Control de Paralelización
-
-```python
-# En flight_scraper_main.py
-DEFAULT_CONFIG["MAX_WORKERS"] = 4  # Número de búsquedas simultáneas
+selenium>=4.15.0
+requests>=2.31.0
+webdriver-manager>=4.0.0
 ```
 
-### Ajuste de Timeouts
+## ⚖️ Aviso Legal
 
-```python
-DEFAULT_CONFIG["TIMEOUTS"] = {
-    "selenium": 60,  # segundos
-    "retry": 3       # intentos
-}
-```
+**Uso privado solo**. No para:
+- ❌ Distribución comercial
+- ❌ Competencia con scrapers masivos
+- ❌ Venta de datos
+- ❌ Violación de Terms of Service
 
-### Desactivar Fuentes
+RyanAir API es oficial. Google Flights: respetar robots.txt.
 
-```python
-DEFAULT_CONFIG["API_SOURCES"] = ["expedia", "kiwi"]  # Excluir skyscanner y amadeus
-```
+## 📝 Logs
 
-## ⚠️ Limitaciones y Consideraciones
+Archivo `flight_scraper.log` contiene:
+- Todas las búsquedas realizadas
+- Errores y warnings
+- Debugging detallado (con `--verbose`)
 
-### Rate Limiting
+## 🎓 Notas Técnicas
 
-- **Kiwi.com**: 180 peticiones/minuto
-- **Skyscanner**: Depende del plan RapidAPI
-- **Amadeus**: Depende del plan de desarrollador
+### RyanAir
+- Usa API pública oficial: `https://www.ryanair.com/api/farfnd/v4/roundTrip`
+- Requests HTTP simples, muy rápido
+- Solo vuelos RyanAir (no terceros)
 
-Para evitar bloqueos:
-- Usar caché (automático, 30-60 minutos)
-- Activar proxies rotativos
-- Distribuir búsquedas en el tiempo
+### Google Flights
+- Carga con Selenium (JavaScript renderizado)
+- Parsing de DOM con regex (frágil a cambios)
+- Más fuentes incluidas
+- Mucho más lento (30+ segundos)
 
-### Proxies Gratuitos
+## 🚀 Mejoras Futuras
 
-⚠️ Los proxies gratuitos tienen limitaciones:
-- Velocidad lenta
-- Confiabilidad variable
-- Pueden estar bloqueados
-- Se validan automáticamente
-
-Para producción, usar proxies de pago.
-
-### Selectores de Expedia
-
-Los selectores de Expedia pueden cambiar con actualizaciones del sitio. Si el scraping falla:
-
-```python
-# Actualizar selectores en DEFAULT_CONFIG
-"SELECTORS": {
-    "flight_card": "li[data-test-id='offer-listing']",
-    # ... otros selectores
-}
-```
-
-## 🐛 Solución de Problemas
-
-### "ModuleNotFoundError: No module named 'selenium'"
-
-```bash
-pip install -r requirements.txt
-```
-
-### "AMADEUS_CLIENT_ID/SECRET no configurados"
-
-```bash
-# Editar .env y añadir credenciales
-nano .env  # o tu editor preferido
-```
-
-### "No se encuentran vuelos"
-
-1. Verificar códigos IATA: https://www.iata.org/
-2. Probar con otras fechas
-3. Ejecutar con `--verbose` para ver logs detallados
-4. Verificar que las APIs estén configuradas correctamente
-
-### "Rate limit alcanzado"
-
-```bash
-# Esperar o usar proxies
-python flight_scraper_main.py --proxies
-```
-
-## 📈 Performance
-
-Tiempos típicos de búsqueda (para 3 orígenes x 1 destino):
-
-| Modo | Tiempo | Fuentes |
-|------|--------|---------|
-| Solo Expedia | 30-60s | 1 |
-| Solo APIs | 5-15s | 3 |
-| Combinado | 20-45s | 4 |
-| Con Proxies | 60-120s | 4 |
-
-## 🔐 Seguridad
-
-- Las credenciales se almacenan en `.env` (no en código)
-- Se pueden usar variables de entorno del sistema
-- No se guardan datos sensibles en logs
-- Los proxies se validan antes de usar
-
-## 📝 Licencia
-
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+- [ ] Soporte para más aerolíneas (EasyJet, Vueling)
+- [ ] Cache de resultados
+- [ ] Notificaciones por email si baja precio
+- [ ] Interfaz gráfica (Qt/PySimpleGUI)
+- [ ] Historial de búsquedas
 
 ## 📧 Soporte
 
-Para reportar bugs o sugerencias, crea un issue en el repositorio.
+Para problemas:
+1. Ejecuta con `--verbose` y mira los logs
+2. Revisa `flight_scraper.log`
+3. Comprueba `WEBDRIVER_SETUP.md` para problemas de WebDriver
 
-## 🙏 Agradecimientos
+---
 
-- Selenium: Web scraping
-- Amadeus: API de vuelos oficial
-- Kiwi.com: API Tequila
-- RapidAPI: Comunidad y APIs
-
-## ⚡ Roadmap Futuro
-
-- [ ] Integración con Google Flights API
-- [ ] Base de datos para histórico de precios
-- [ ] Machine learning para predicción de precios
-- [ ] Interfaz web (Flask/FastAPI)
-- [ ] Notificaciones de cambios de precio
-- [ ] Dashboard con gráficas
-- [ ] Soporte para hoteles y coches
-- [ ] Tests unitarios completos
+**FlightScrapper v2.0** - Limpio, privado, sin APIs complicadas.
