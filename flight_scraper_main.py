@@ -56,45 +56,80 @@ def setup_logging(verbose=False):
     for logger in ["selenium", "urllib3"]: logging.getLogger(logger).setLevel(logging.WARNING)
 
 def get_user_input():
-    cfg = DEFAULT_CONFIG.copy()
-    print("\n===== Buscador de Vuelos Mejorado =====\nPresiona Enter para valores predeterminados.\n")
-    
+    # Cargar última configuración si existe
+    last_cfg = load_saved_config()
+    if last_cfg:
+        cfg = last_cfg
+        print("\n===== Buscador de Vuelos Mejorado =====")
+        print(f"Última búsqueda: {last_cfg['AIRPORTS'][0]} → {last_cfg['DESTINATIONS'][0]}, "
+              f"{last_cfg['PASSENGERS']['children'].split('[')[0] if '[' in last_cfg['PASSENGERS']['children'] else 0} niños")
+        print("Presiona Enter para valores de la última búsqueda.\n")
+    else:
+        cfg = DEFAULT_CONFIG.copy()
+        print("\n===== Buscador de Vuelos Mejorado =====\nPresiona Enter para valores predeterminados.\n")
+
     # Campos básicos
-    for key, prompt in [("AIRPORTS", f"Aeropuertos origen [{', '.join(cfg['AIRPORTS'])}]: "), 
+    for key, prompt in [("AIRPORTS", f"Aeropuertos origen [{', '.join(cfg['AIRPORTS'])}]: "),
                         ("DESTINATIONS", f"Destinos [{', '.join(cfg['DESTINATIONS'])}]: ")]:
         inp = input(prompt)
         if inp.strip(): cfg[key] = [x.strip().upper() for x in inp.split(",")]
-    
+
     # Fechas y estancia
     for key, subkey, prompt in [
         ("DATES", "from", f"Fecha mín salida (DD/MM/YYYY) [{cfg['DATES']['from']}]: "),
         ("DATES", "to", f"Fecha máx regreso [{cfg['DATES']['to']}]: "),
-        ("STAY_DURATION", "min_days", f"Estancia mínima [{cfg['STAY_DURATION']['min_days']}]: "),
+        ("STAY_DURATION", "min_days", f"Estancia mínima (o MAX para calcular) [{cfg['STAY_DURATION']['min_days']}]: "),
         ("STAY_DURATION", "max_days", f"Estancia máxima [{cfg['STAY_DURATION']['max_days']}]: ")]:
         inp = input(prompt)
-        if inp.strip() and (not subkey.endswith('days') or inp.isdigit()):
-            cfg[key][subkey] = int(inp) if subkey.endswith('days') else inp
-    
+        if inp.strip():
+            if key == "STAY_DURATION" and subkey == "min_days" and inp.upper() == "MAX":
+                # AUTO-CALCULAR: máxima estancia posible entre min salida y máx regreso
+                try:
+                    from_date = datetime.strptime(cfg["DATES"]["from"], "%d/%m/%Y")
+                    to_date = datetime.strptime(cfg["DATES"]["to"], "%d/%m/%Y")
+                    max_possible_days = (to_date - from_date).days
+                    cfg[key][subkey] = max_possible_days
+                    logging.info(f"Estancia mínima AUTO-CALCULADA: {max_possible_days} días")
+                except:
+                    cfg[key][subkey] = int(inp) if inp.isdigit() else cfg[key][subkey]
+            elif not subkey.endswith('days') or inp.isdigit():
+                cfg[key][subkey] = int(inp) if subkey.endswith('days') else inp
+
     # Pasajeros
-    cfg["PASSENGERS"]["adults"] = int(input(f"Adultos [{cfg['PASSENGERS']['adults']}]: ") or cfg["PASSENGERS"]["adults"])
-    children = input("Niños [0]: ")
-    if children.strip() and children.isdigit() and int(children) > 0:
-        ages = [input(f"Edad niño {i+1} [11]: ").strip() or "11" for i in range(int(children))]
+    adults_inp = input(f"Adultos [{cfg['PASSENGERS']['adults']}]: ").strip()
+    if adults_inp: cfg["PASSENGERS"]["adults"] = int(adults_inp)
+
+    children = input(f"Niños [{cfg['PASSENGERS']['children'].split('[')[0] if '[' in cfg['PASSENGERS']['children'] else 0}]: ").strip()
+    if children and children.isdigit() and int(children) > 0:
+        # Obtener edades previas si existen
+        prev_ages = []
+        if "[" in cfg['PASSENGERS']['children']:
+            try: prev_ages = cfg['PASSENGERS']['children'].split("[")[1].rstrip("]").split(";")
+            except: pass
+
+        ages = []
+        for i in range(int(children)):
+            default_age = prev_ages[i] if i < len(prev_ages) else "12"
+            age = input(f"Edad niño {i+1} [{default_age}]: ").strip() or default_age
+            ages.append(age)
         cfg["PASSENGERS"]["children"] = f"{children}[{';'.join(ages)}]"
-    elif children.strip() and children.isdigit(): cfg["PASSENGERS"]["children"] = "0"
-    
+    elif children and children.isdigit():
+        cfg["PASSENGERS"]["children"] = "0"
+
     # Preferencias de vuelo
-    cfg["DIRECT_FLIGHTS_ONLY"] = input("¿Solo directos? (s/n) [n]: ").lower().startswith('s')
+    direct_inp = input(f"¿Solo directos? (s/n) [{('s' if cfg['DIRECT_FLIGHTS_ONLY'] else 'n')}]: ").lower().strip()
+    if direct_inp: cfg["DIRECT_FLIGHTS_ONLY"] = direct_inp.startswith('s')
+
     if not cfg["DIRECT_FLIGHTS_ONLY"]:
-        max_stops = input(f"Escalas máx [{cfg['MAX_STOPS']}]: ")
-        if max_stops.strip() and max_stops.isdigit(): cfg["MAX_STOPS"] = int(max_stops)
-    
+        max_stops = input(f"Escalas máx [{cfg['MAX_STOPS']}]: ").strip()
+        if max_stops and max_stops.isdigit(): cfg["MAX_STOPS"] = int(max_stops)
+
     # Clase y resultados
-    cabin = input(f"Clase (economy,premium,business,first) [{cfg['CABIN_CLASS']}]: ").lower()
+    cabin = input(f"Clase (economy,premium,business,first) [{cfg['CABIN_CLASS']}]: ").lower().strip()
     if cabin in ["economy", "premium", "business", "first"]: cfg["CABIN_CLASS"] = cabin
-    max_results = input(f"Resultados a mostrar [{cfg['MAX_RESULTS']}]: ")
-    if max_results.strip() and max_results.isdigit(): cfg["MAX_RESULTS"] = int(max_results)
-    
+    max_results = input(f"Resultados a mostrar [{cfg['MAX_RESULTS']}]: ").strip()
+    if max_results and max_results.isdigit(): cfg["MAX_RESULTS"] = int(max_results)
+
     # Opciones avanzadas
     if input("\n¿Opciones avanzadas? (s/n) [n]: ").lower().startswith('s'):
         # Configuración técnica
@@ -102,9 +137,9 @@ def get_user_input():
             ("MAX_WORKERS", f"Búsquedas paralelas [{cfg['MAX_WORKERS']}]: ", int),
             ("MAX_RETRIES", f"Intentos reconexión [{cfg['MAX_RETRIES']}]: ", int),
             ("OUTPUT_FILE", f"Archivo salida [{cfg['OUTPUT_FILE']}]: ", str)]:
-            inp = input(prompt)
-            if inp.strip() and (typ != int or inp.isdigit()): cfg[key] = typ(inp)
-                
+            inp = input(prompt).strip()
+            if inp and (typ != int or inp.isdigit()): cfg[key] = typ(inp)
+
         # Fuentes de datos
         print("\nFuentes disponibles:")
         sources = {"1": "expedia"}
@@ -112,22 +147,27 @@ def get_user_input():
         if SKYSCANNER_AVAILABLE: sources["3"] = "skyscanner"; print("3. Skyscanner API")
         if AMADEUS_AVAILABLE: sources["4"] = "amadeus"; print("4. Amadeus API")
         print(f"1. Expedia (predeterminado)")
-        
-        inp = input(f"Seleccione fuentes (coma): ")
-        if inp.strip():
+
+        inp = input(f"Seleccione fuentes (coma) [{','.join([str(list(sources.keys())[list(sources.values()).index(s)]) for s in cfg['API_SOURCES'] if s in sources.values()])}]: ").strip()
+        if inp:
             sel_sources = [sources[s.strip()] for s in inp.split(',') if s.strip() in sources]
             if sel_sources: cfg["API_SOURCES"] = sel_sources
-        
+
         # Configurar API keys
         handle_api_keys(cfg)
-        cfg["USE_PROXIES"] = input("¿Usar proxies? (s/n) [n]: ").lower().startswith('s')
-    
+
+    # IMPORTANTE: Solo cargar proxies si el usuario lo pide EXPLÍCITAMENTE
+    cfg["USE_PROXIES"] = False
+    if input("¿Usar proxies rotativas? (s/n) [n]: ").lower().startswith('s'):
+        cfg["USE_PROXIES"] = True
+        logging.info("Proxies rotativas ACTIVADOS")
+
     # Guardar configuración
     with open("last_config.json", "w") as f:
         save_cfg = {k: v for k, v in cfg.items() if k not in ["USER_AGENTS", "SELECTORS"]}
         save_cfg["REQUEST_DELAY"] = list(cfg["REQUEST_DELAY"])
         json.dump(save_cfg, f, indent=4)
-    
+
     return cfg
 
 def handle_api_keys(cfg):
