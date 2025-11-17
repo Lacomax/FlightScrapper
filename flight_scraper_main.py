@@ -4,9 +4,8 @@ from datetime import datetime, timedelta
 from selenium.webdriver.common.by import By
 
 from webdriver_utils import setup_edge_driver, wait_for_elements, get_element_safely, get_elements_safely, random_delay, get_random_proxy
-from flight_parser import (parse_flight_details, find_best_combinations, format_combination_table, build_expedia_url, 
-                          generate_date_range, save_results_json, save_results_text)
-from flight_parser_fix import fix_unicode_arrows
+from flight_parser import (parse_flight_details, find_best_combinations, format_combination_table, build_expedia_url,
+                          generate_date_range, save_results_json, save_results_text, fix_unicode_arrows)
 
 try: from kiwi_api import search_flights, extract_flights; KIWI_AVAILABLE = True
 except: KIWI_AVAILABLE = False
